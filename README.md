@@ -19,3 +19,6 @@ uncompile all *.pyc under specified directory by using [uncompyle2](https://gith
 
 ## randObjectId.rb
 generate object IDs for .xib files.
+
+## provide_unicodes.py
+provide unicodes to glyphs which has no unicodes according to AGLFN.
