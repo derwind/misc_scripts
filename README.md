@@ -12,7 +12,7 @@ But currently only very simple descriptions are supported.
 extract a subset of UFO file.
 
 ## extract_features.rb
-extract `include' statements in a n Adobe OpenType feature file.
+extract 'include' statements in a n Adobe OpenType feature file.
 
 ## uncompyle_all.rb
 uncompile all *.pyc under specified directory by using [uncompyle2](https://github.com/wibiti/uncompyle2).
@@ -22,3 +22,6 @@ generate object IDs for .xib files.
 
 ## provide_unicodes.py
 provide unicodes to glyphs which has no unicodes according to AGLFN.
+
+## smoothing.py
+restore 'smooth' attributes of UFO which are lost during conversion by 'tx'.
