@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os, sys, re
+from distutils.spawn import find_executable
 
 class CMapMode(object):
     NONE = 0
@@ -62,7 +63,17 @@ class CMap(object):
                 self.rh[cid] = sorted(self.rh[cid])
 
 if __name__ == "__main__":
-    cmap_path = sys.argv[1]
+    def default_cmap_path():
+        try:
+            tx_path = os.path.dirname(find_executable("tx"))
+            path = os.path.join(tx_path, "../SharedData/Adobe Cmaps/Adobe-Japan1")
+            return os.path.join(path, "UniJIS2004-UTF32-H")
+        except:
+            return None
+
+    cmap_path = default_cmap_path()
+    if len(sys.argv) > 1:
+        cmap_path = sys.argv[1]
     cmap = CMap(cmap_path)
     for uni, cid in sorted(cmap.h.items(), key=lambda (uni, cid): cid):
         print "{0:04x}: {1}".format(uni, cid)

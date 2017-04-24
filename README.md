@@ -28,3 +28,9 @@ restore 'smooth' attributes of UFO which are lost during conversion by 'tx'.
 
 ## cmap_reader.py
 read a CMap file (e.g. UniJIS2004-UTF32-H) and construct dicts which map unicodes to CIDs and CIDs to unicodes.
+
+## check_fonts_unicodes.py
+check glyph's unicodes according to specified CMap.
+
+## rename_ufo_by_Glyphs.py
+rename a UFO's glyphs names where the UFO is exported by Glyphs.
