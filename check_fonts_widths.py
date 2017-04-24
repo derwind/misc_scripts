@@ -5,7 +5,6 @@ import os, sys, re
 from fontTools.ttLib import TTFont
 from robofab.world import OpenFont
 from distutils.spawn import find_executable
-from cmap_reader import CMap
 
 UPM = 1000
 
