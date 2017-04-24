@@ -32,5 +32,8 @@ read a CMap file (e.g. UniJIS2004-UTF32-H) and construct dicts which map unicode
 ## check_fonts_unicodes.py
 check glyph's unicodes according to specified CMap.
 
+## check_fonts_widths.py
+check glyph's width according to specified layout file.
+
 ## rename_ufo_by_Glyphs.py
 rename a UFO's glyphs names where the UFO is exported by Glyphs.
