@@ -25,3 +25,6 @@ provide unicodes to glyphs which has no unicodes according to AGLFN.
 
 ## smoothing.py
 restore 'smooth' attributes of UFO which are lost during conversion by 'tx'.
+
+## cmap_reader.py
+read a CMap file (e.g. UniJIS2004-UTF32-H) and construct dicts which map unicodes to CIDs and CIDs to unicodes.
