@@ -50,3 +50,7 @@ freetype related scripts
 ### freetype/raster_glyphs.py
 
 rasterize glyphs in specified GID range
+
+### freetype/raster\_kanji\_glyphs.py
+
+rasterize glyphs in Adobe-Japan1-3 Kanji area
