@@ -23,7 +23,7 @@ def save_image(face, gid):
     W, H = int(UPM * ratio), int(UPM * ratio)
     Z = np.zeros( (H, W), dtype=np.ubyte )
     if True:
-        buff = np.array(bitmap.buffer, dtype=np.ubyte).reshape((bitmap.rows, bitmap.width))
+        buff = np.array(bitmap.buffer, dtype=np.ubyte).reshape((height, width))
         Z[H-(top+shift):H-(top+shift)+height,left:left+width].flat |= buff[:,:width].flatten()
         Z = 0xff - Z
         im = Image.fromarray(Z, mode='L')
