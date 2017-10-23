@@ -16,6 +16,12 @@ class CMap(object):
         self.rh = {}
         self.parse(path)
 
+    def cmap(self):
+        return self.h
+
+    def reversed_cmap(self):
+        return self.rh
+
     def parse(self, path):
         with open(path) as f:
             for line in f.readlines():
