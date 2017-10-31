@@ -12,23 +12,35 @@ class GlyphsScaler(object):
     def __init__(self, in_font, out_font, scale=2.048):
         self.in_font = in_font
         self.out_font = out_font
+        self.font = None
         self.scale = scale
+        self.isCID = True
 
     def run(self):
-        font = TTFont(self.in_font)
-        cff = font["CFF "].cff
+        self.font = TTFont(self.in_font)
+        self.update_cff()
+        self.update_hmtx()
+        self.font.save(self.out_font)
+
+    def update_cff(self):
+        cff = self.font["CFF "].cff
         topDict = cff.topDictIndex[0]
+        self.isCID = hasattr(topDict, "FDArray")
+
+        gs = self.font.getGlyphSet()
+        order = self.font.getGlyphOrder()
+
+        self.update_glyps_widths(gs, topDict)
+        self.update_default_and_nominal_width(topDict)
+
+    def update_glyps_widths(self, gs, topDict):
         globalSubrs = topDict.GlobalSubrs
         charStrings = topDict.CharStrings
-        gs = font.getGlyphSet()
-        order = font.getGlyphOrder()
 
-        isCID = hasattr(topDict, "FDArray")
-
-        for name in order:
+        for name in gs.keys():
             g = gs[name]
             c, fdSelectIndex = topDict.CharStrings.getItemAndSelector(name)
-            if isCID:
+            if self.isCID:
                 private = topDict.FDArray[fdSelectIndex].Private
             else:
                 private = topDict.Private
@@ -36,8 +48,7 @@ class GlyphsScaler(object):
             dfltWdX = private.defaultWidthX
             nmnlWdX = private.nominalWidthX
 
-            width = g.width
-            width = width - nmnlWdX
+            width = g.width - nmnlWdX
 
             transformation = (self.scale, 0, 0, self.scale, 0, 0)
             t2Pen = T2CharStringPen(width, gs)
@@ -45,11 +56,47 @@ class GlyphsScaler(object):
             g.draw(transPen)
             charString = t2Pen.getCharString(private, globalSubrs)
             glyphID = charStrings.charStrings[name]
+
+            self.update_glyph_width(charString, nmnlWdX)
             charStrings.charStringsIndex.items[glyphID] = charString
 
             g.width = int(g.width * self.scale)
 
-        font.save("out.otf")
+    def update_glyph_width(self, charString, nmnlWdX):
+        int_args = []
+        for b in charString.program:
+            if isinstance(b, int):
+                int_args.append(b)
+            elif isinstance(b, str):
+                if b == "rmoveto":
+                    if len(int_args) != 2:
+                        break
+                elif b == "hmoveto" or b == "vmoveto":
+                    if len(int_args) != 1:
+                        break
+                elif b == "endchar":
+                    if len(int_args) != 0:
+                        break
+                else:
+                    return
+        charString.program[0] = int(charString.program[0] * self.scale)
+
+    def update_default_and_nominal_width(self, topDict):
+        if self.isCID:
+            for fd in topDict.FDArray:
+                private = fd.Private
+                private.defaultWidthX = int(private.defaultWidthX * self.scale)
+                private.nominalWidthX = int(private.nominalWidthX * self.scale)
+        else:
+            private = topDict.Private
+            private.defaultWidthX = int(private.defaultWidthX * self.scale)
+            private.nominalWidthX = int(private.nominalWidthX * self.scale)
+
+    def update_hmtx(self):
+        hmtx = self.font["hmtx"]
+        for gname in hmtx.metrics.keys():
+            adw, lsb = hmtx.metrics[gname]
+            hmtx.metrics[gname] = (int(adw * self.scale), int(lsb * self.scale))
 
 def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
