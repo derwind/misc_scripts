@@ -13,13 +13,15 @@ class GlyphsScaler(object):
         self.in_font = in_font
         self.out_font = out_font
         self.font = None
-        self.scale = scale
+        self._scale = scale
         self.isCID = True
 
     def run(self):
         self.font = TTFont(self.in_font)
         self.update_cff()
+        self.update_head()
         self.update_hmtx()
+        self.update_vmtx()
         self.font.save(self.out_font)
 
     def update_cff(self):
@@ -50,7 +52,7 @@ class GlyphsScaler(object):
 
             width = g.width - nmnlWdX
 
-            transformation = (self.scale, 0, 0, self.scale, 0, 0)
+            transformation = (self._scale, 0, 0, self._scale, 0, 0)
             t2Pen = T2CharStringPen(width, gs)
             transPen = TransformPen(t2Pen, transformation)
             g.draw(transPen)
@@ -59,8 +61,6 @@ class GlyphsScaler(object):
 
             self.update_glyph_width(charString, nmnlWdX)
             charStrings.charStringsIndex.items[glyphID] = charString
-
-            g.width = int(g.width * self.scale)
 
     def update_glyph_width(self, charString, nmnlWdX):
         int_args = []
@@ -79,24 +79,44 @@ class GlyphsScaler(object):
                         break
                 else:
                     return
-        charString.program[0] = int(charString.program[0] * self.scale)
+        charString.program[0] = self.scale(charString.program[0])
 
     def update_default_and_nominal_width(self, topDict):
         if self.isCID:
             for fd in topDict.FDArray:
                 private = fd.Private
-                private.defaultWidthX = int(private.defaultWidthX * self.scale)
-                private.nominalWidthX = int(private.nominalWidthX * self.scale)
+                private.defaultWidthX = self.scale(private.defaultWidthX)
+                private.nominalWidthX = self.scale(private.nominalWidthX)
         else:
             private = topDict.Private
-            private.defaultWidthX = int(private.defaultWidthX * self.scale)
-            private.nominalWidthX = int(private.nominalWidthX * self.scale)
+            private.defaultWidthX = self.scale(private.defaultWidthX)
+            private.nominalWidthX = self.scale(private.nominalWidthX)
+
+    def update_head(self):
+        head = self.font["head"]
+        head.unitsPerEm = self.scale(head.unitsPerEm)
+        head.xMin = self.scale(head.xMin)
+        head.yMin = self.scale(head.yMin)
+        head.xMax = self.scale(head.xMax)
+        head.yMax = self.scale(head.yMax)
 
     def update_hmtx(self):
         hmtx = self.font["hmtx"]
         for gname in hmtx.metrics.keys():
             adw, lsb = hmtx.metrics[gname]
-            hmtx.metrics[gname] = (int(adw * self.scale), int(lsb * self.scale))
+            hmtx.metrics[gname] = (self.scale(adw), self.scale(lsb))
+
+    def update_vmtx(self):
+        if "vmtx" not in self.font:
+            return
+
+        vmtx = self.font["vmtx"]
+        for gname in vmtx.metrics.keys():
+            adh, tsb = vmtx.metrics[gname]
+            vmtx.metrics[gname] = (self.scale(adh), self.scale(tsb))
+
+    def scale(self, value):
+        return int(value * self._scale)
 
 def get_args():
     parser = argparse.ArgumentParser(description=__doc__)
