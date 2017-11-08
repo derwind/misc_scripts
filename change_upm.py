@@ -52,13 +52,18 @@ class GlyphsScaler(object):
             self.font.save(self.out_font)
 
     def update_BASE(self):
+        if "BASE" not in self.font:
+            return
+
         base = self.font["BASE"]
-        for record in base.table.HorizAxis.BaseScriptList.BaseScriptRecord:
-            for coord in record.BaseScript.BaseValues.BaseCoord:
-                coord.Coordinate = self.scale(coord.Coordinate)
-        for record in base.table.VertAxis.BaseScriptList.BaseScriptRecord:
-            for coord in record.BaseScript.BaseValues.BaseCoord:
-                coord.Coordinate = self.scale(coord.Coordinate)
+        if hasattr(base.table.HorizAxis, "BaseScriptList"):
+            for record in base.table.HorizAxis.BaseScriptList.BaseScriptRecord:
+                for coord in record.BaseScript.BaseValues.BaseCoord:
+                    coord.Coordinate = self.scale(coord.Coordinate)
+        if hasattr(base.table.VertAxis, "BaseScriptList"):
+            for record in base.table.VertAxis.BaseScriptList.BaseScriptRecord:
+                for coord in record.BaseScript.BaseValues.BaseCoord:
+                    coord.Coordinate = self.scale(coord.Coordinate)
 
     def update_CFF(self):
         cff = self.font["CFF "].cff
