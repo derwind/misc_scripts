@@ -21,16 +21,37 @@ class GlyphsScaler(object):
         self.isCID = True
 
     def run(self):
-        self.update_cff()
+        self.update_BASE()
+        self.update_CFF()
+        self.update_GPOS()
+        self.update_OS_2()
+        self.update_VORG()
         self.update_head()
+        self.update_hhea()
         self.update_hmtx()
+        self.update_post()
+        self.update_vhea()
         self.update_vmtx()
         self.font.save(self.out_font)
 
-    def update_cff(self):
+    def update_BASE(self):
+        base = self.font["BASE"]
+        for record in base.table.HorizAxis.BaseScriptList.BaseScriptRecord:
+            for coord in record.BaseScript.BaseValues.BaseCoord:
+                coord.Coordinate = self.scale(coord.Coordinate)
+        for record in base.table.VertAxis.BaseScriptList.BaseScriptRecord:
+            for coord in record.BaseScript.BaseValues.BaseCoord:
+                coord.Coordinate = self.scale(coord.Coordinate)
+
+    def update_CFF(self):
         cff = self.font["CFF "].cff
         topDict = cff.topDictIndex[0]
         self.isCID = hasattr(topDict, "FDArray")
+
+        topDict.UnderlinePosition = self.scale(topDict.UnderlinePosition)
+        topDict.UnderlineThickness = self.scale(topDict.UnderlineThickness)
+        topDict.FontBBox = map(lambda v: self.scale(v), topDict.FontBBox)
+        topDict.StrokeWidth = self.scale(topDict.StrokeWidth)
 
         gs = self.font.getGlyphSet()
         order = self.font.getGlyphOrder()
@@ -95,6 +116,39 @@ class GlyphsScaler(object):
             private.defaultWidthX = self.scale(private.defaultWidthX)
             private.nominalWidthX = self.scale(private.nominalWidthX)
 
+    def update_GPOS(self):
+        pass
+
+    def update_OS_2(self):
+        os_2 = self.font["OS/2"]
+        os_2.xAvgCharWidth = self.scale(os_2.xAvgCharWidth)
+        os_2.ySubscriptXSize = self.scale(os_2.ySubscriptXSize)
+        os_2.ySubscriptYSize = self.scale(os_2.ySubscriptYSize)
+        os_2.ySubscriptXOffset = self.scale(os_2.ySubscriptXOffset)
+        os_2.ySubscriptYOffset = self.scale(os_2.ySubscriptYOffset)
+        os_2.ySuperscriptXSize = self.scale(os_2.ySuperscriptXSize)
+        os_2.ySuperscriptYSize = self.scale(os_2.ySuperscriptYSize)
+        os_2.ySuperscriptXOffset = self.scale(os_2.ySuperscriptXOffset)
+        os_2.ySuperscriptYOffset = self.scale(os_2.ySuperscriptYOffset)
+        os_2.yStrikeoutSize = self.scale(os_2.yStrikeoutSize)
+        os_2.yStrikeoutPosition = self.scale(os_2.yStrikeoutPosition)
+        os_2.sTypoAscender = self.scale(os_2.sTypoAscender)
+        os_2.sTypoDescender = self.scale(os_2.sTypoDescender)
+        os_2.sTypoLineGap = self.scale(os_2.sTypoLineGap)
+        os_2.usWinAscent = self.scale(os_2.usWinAscent)
+        os_2.usWinDescent = self.scale(os_2.usWinDescent)
+        os_2.sxHeight = self.scale(os_2.sxHeight)
+        os_2.sCapHeight = self.scale(os_2.sCapHeight)
+
+    def update_VORG(self):
+        if "VORG" not in self.font:
+            return
+
+        vorg = self.font["VORG"]
+        for name in vorg.VOriginRecords.keys():
+            vorg.VOriginRecords[name] = self.scale(vorg.VOriginRecords[name])
+        vorg.defaultVertOriginY = self.scale(vorg.defaultVertOriginY)
+
     def update_head(self):
         head = self.font["head"]
         head.unitsPerEm = self.scale(head.unitsPerEm)
@@ -103,11 +157,39 @@ class GlyphsScaler(object):
         head.xMax = self.scale(head.xMax)
         head.yMax = self.scale(head.yMax)
 
+    def update_hhea(self):
+        hhea = self.font["hhea"]
+        hhea.ascent = self.scale(hhea.ascent)
+        hhea.descent = self.scale(hhea.descent)
+        hhea.lineGap = self.scale(hhea.lineGap)
+        hhea.advanceWidthMax = self.scale(hhea.advanceWidthMax)
+        hhea.minLeftSideBearing = self.scale(hhea.minLeftSideBearing)
+        hhea.minRightSideBearing = self.scale(hhea.minRightSideBearing)
+        hhea.xMaxExtent = self.scale(hhea.xMaxExtent)
+
     def update_hmtx(self):
         hmtx = self.font["hmtx"]
         for gname in hmtx.metrics.keys():
             adw, lsb = hmtx.metrics[gname]
             hmtx.metrics[gname] = (self.scale(adw), self.scale(lsb))
+
+    def update_post(self):
+        post = self.font["post"]
+        post.underlinePosition = self.scale(post.underlinePosition)
+        post.underlineThickness = self.scale(post.underlineThickness)
+
+    def update_vhea(self):
+        if "vhea" not in self.font:
+            return
+
+        vhea = self.font["vhea"]
+        vhea.ascent = self.scale(vhea.ascent)
+        vhea.descent = self.scale(vhea.descent)
+        vhea.lineGap = self.scale(vhea.lineGap)
+        vhea.advanceHeightMax = self.scale(vhea.advanceHeightMax)
+        vhea.minTopSideBearing = self.scale(vhea.minTopSideBearing)
+        vhea.minBottomSideBearing = self.scale(vhea.minBottomSideBearing)
+        vhea.yMaxExtent = self.scale(vhea.yMaxExtent)
 
     def update_vmtx(self):
         if "vmtx" not in self.font:
