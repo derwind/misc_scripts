@@ -1,6 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+change units per EM
+"""
+
 import os, sys, re
 import argparse
 from fontTools.ttLib import TTFont
@@ -9,15 +13,14 @@ from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 
 class GlyphsScaler(object):
-    def __init__(self, in_font, out_font, scale=2.048):
+    def __init__(self, in_font, out_font, upm=2048):
         self.in_font = in_font
         self.out_font = out_font
-        self.font = None
-        self._scale = scale
+        self.font = TTFont(self.in_font)
+        self._scale = round(1. * upm / self.font["head"].unitsPerEm, 3)
         self.isCID = True
 
     def run(self):
-        self.font = TTFont(self.in_font)
         self.update_cff()
         self.update_head()
         self.update_hmtx()
@@ -124,8 +127,8 @@ def get_args():
                         help="FONT")
     parser.add_argument("-o", "--output", dest="out_font", default=None,
                         help="output font")
-    parser.add_argument("-s", "--scale", dest="scale", default=None,
-                        help="scale")
+    parser.add_argument("-u", "--upm", dest="upm", default=None,
+                        help="units per EM")
 
     args = parser.parse_args()
 
@@ -137,11 +140,11 @@ def get_args():
 def main():
     args = get_args()
 
-    scale = 2.048
-    if args.scale:
-        scale = float(args.scale)
+    upm = 2048
+    if args.upm:
+        upm = float(args.upm)
 
-    scaler = GlyphsScaler(args.in_font, args.out_font, scale)
+    scaler = GlyphsScaler(args.in_font, args.out_font, upm)
     scaler.run()
 
 if __name__ == "__main__":
