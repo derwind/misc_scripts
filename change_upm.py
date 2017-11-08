@@ -12,17 +12,33 @@ from fontTools.misc.transform import Transform
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.t2CharStringPen import T2CharStringPen
 
+# https://www.microsoft.com/typography/otspec/gpos.htm
+# LookupType Enumeration table for glyph positioning
+class GposLookupType(object):
+    SINGLE = 1
+    PAIR = 2
+    CURSIVE_ATT = 3
+    MARK2BASE_ATT = 4
+    MARK2LIGA_ATT = 5
+    MARK2MARK_ATT = 6
+    CONTEXT_POSITIONING = 7
+    CHAINED_CONTEXT_POSITIONING = 8
+    EXTENSION_POSITIONING = 9
+
 class GlyphsScaler(object):
-    def __init__(self, in_font, out_font, upm=2048):
+    def __init__(self, in_font, out_font, upm=2048, dry_run=False):
         self.in_font = in_font
         self.out_font = out_font
         self.font = TTFont(self.in_font)
         self._scale = round(1. * upm / self.font["head"].unitsPerEm, 3)
         self.isCID = True
+        self.dry_run = dry_run
+        self.updated_record_values = set()
 
     def run(self):
         self.update_BASE()
-        self.update_CFF()
+        if not self.dry_run:
+            self.update_CFF()
         self.update_GPOS()
         self.update_OS_2()
         self.update_VORG()
@@ -32,7 +48,8 @@ class GlyphsScaler(object):
         self.update_post()
         self.update_vhea()
         self.update_vmtx()
-        self.font.save(self.out_font)
+        if not self.dry_run:
+            self.font.save(self.out_font)
 
     def update_BASE(self):
         base = self.font["BASE"]
@@ -117,7 +134,104 @@ class GlyphsScaler(object):
             private.nominalWidthX = self.scale(private.nominalWidthX)
 
     def update_GPOS(self):
-        pass
+        if "GPOS" not in self.font:
+            return
+
+        gpos = self.font["GPOS"]
+        for lookup in gpos.table.LookupList.Lookup:
+            self.update_lookup(lookup)
+
+    def update_lookup(self, lookup):
+        for subtable in lookup.SubTable:
+            if subtable.LookupType == GposLookupType.SINGLE:
+                self.update_lookup_single(subtable)
+            elif subtable.LookupType == GposLookupType.PAIR:
+                self.update_lookup_pair(subtable)
+            elif subtable.LookupType == GposLookupType.EXTENSION_POSITIONING:
+                extSubTable = subtable.ExtSubTable
+                if extSubTable.LookupType == GposLookupType.SINGLE:
+                    self.update_lookup_single(extSubTable)
+                elif extSubTable.LookupType == GposLookupType.PAIR:
+                    self.update_lookup_pair(extSubTable)
+                else:
+                    pass
+
+    def update_lookup_single(self, subtable):
+        coverage = subtable.Coverage
+        # SinglePosFormat1 subtable: Single positioning value
+        if subtable.Format == 1:
+            for gname in coverage.glyphs:
+                # some fonts have odd data
+                if subtable.Value is None:
+                    if 0:
+                        print("[WARN] {} has an invalid metrics".format(gname))
+                self.update_record_value(subtable.Value)
+        # SinglePosFormat2 subtable: Array of positioning values
+        elif subtable.Format == 2:
+            for gname, val in zip(coverage.glyphs, subtable.Value):
+                self.update_record_value(val)
+        else:
+            raise NotImplementedError()
+
+    def update_lookup_pair(self, subtable):
+        coverage = subtable.Coverage
+        # PairPosFormat1 subtable: Adjustments for glyph pairs
+        if subtable.Format == 1:
+            for FirstGlyph, pair in zip(coverage.glyphs, subtable.PairSet):
+                for record in pair.PairValueRecord:
+                    SecondGlyph = record.SecondGlyph
+                    Value1 = record.Value1
+                    Value2 = record.Value2
+                    self.update_record_value(Value1)
+        # PairPosFormat2 subtable: Class pair adjustment
+        elif subtable.Format == 2:
+            ordered_classes1 = self._order_classes(subtable.ClassDef1.classDefs, coverage)
+            ordered_classes2 = self._order_classes(subtable.ClassDef2.classDefs)
+
+            for classValue1, gnames1 in ordered_classes1:
+                class1Record = subtable.Class1Record[classValue1]
+                class2Record = class1Record.Class2Record
+                for classValue2, gnames2 in ordered_classes2:
+                    record = class2Record[classValue2]
+                    self.update_record_value(record.Value1)
+        else:
+            raise NotImplementedError()
+
+    def update_record_value(self, record):
+        # If same record is referred from several lookups, then updating must be done once.
+        if record in self.updated_record_values:
+            return
+
+        if hasattr(record, "XPlacement"):
+            record.XPlacement = self.scale(record.XPlacement)
+        if hasattr(record, "YPlacement"):
+            record.YPlacement = self.scale(record.YPlacement)
+        if hasattr(record, "XAdvance"):
+            record.XAdvance = self.scale(record.XAdvance)
+        if hasattr(record, "YAdvance"):
+            record.YAdvance = self.scale(record.YAdvance)
+
+        self.updated_record_values.add(record)
+
+    def _order_classes(self, classDefs, coverage=None):
+        d = {}
+        for gname, classValue in classDefs.items():
+            if not classValue in d:
+                d[classValue] = []
+            d[classValue].append(gname)
+        for classValue, gnames in d.items():
+            d[classValue] = sorted(gnames)
+        # XXX: precise definition of Class 0?
+        # gnames = coverage - all glyphs belonging to any other classes?
+        if coverage is not None and 0 not in d:
+            glyphs = sorted(coverage.glyphs)
+            for classValue, gnames in d.items():
+                for gname in gnames:
+                    if gname in glyphs:
+                        glyphs.remove(gname)
+            d[0] = glyphs
+        # for python 2, 'lambda (classValue,gnames): gnames[0]' is also valid
+        return sorted(d.items(), key=lambda classValue_gnames: classValue_gnames[1][0])
 
     def update_OS_2(self):
         os_2 = self.font["OS/2"]
@@ -211,6 +325,8 @@ def get_args():
                         help="output font")
     parser.add_argument("-u", "--upm", dest="upm", default=None,
                         help="units per EM")
+    parser.add_argument("--dry-run", dest="dry_run", action="store_true",
+                        help="dry run?")
 
     args = parser.parse_args()
 
@@ -226,7 +342,7 @@ def main():
     if args.upm:
         upm = float(args.upm)
 
-    scaler = GlyphsScaler(args.in_font, args.out_font, upm)
+    scaler = GlyphsScaler(args.in_font, args.out_font, upm, args.dry_run)
     scaler.run()
 
 if __name__ == "__main__":
