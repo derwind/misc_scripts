@@ -62,17 +62,11 @@ class UfoSplitter(object):
                 continue
             elif suffix == "upper":
                 parent_name = g.name.split(".")[0]
-                new_g = g.copy()
-                new_g.clear()
-                new_g.name = parent_name
-                for con in g.contours:
-                    new_g.appendContour(con)
+                g.name = parent_name
                 lower_g = font["{}.lower".format(parent_name)]
                 for con in lower_g:
-                    new_g.appendContour(con)
-                font.insertGlyph(new_g)
+                    g.appendContour(con)
                 new_pgo.append(parent_name)
-                font.removeGlyph(g.name)
                 font.removeGlyph(lower_g.name)
             else:
                 new_pgo.append(g.name)
