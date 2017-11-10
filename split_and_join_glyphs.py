@@ -10,7 +10,7 @@ import argparse
 from robofab.world import OpenFont
 from robofab.objects.objectsRF import RGlyph
 
-CONTOURS_THRESHOLD = 2
+CONTOURS_THRESHOLD = 256
 Y_THRESHOLD = 380
 
 class UfoSplitter(object):
@@ -44,11 +44,11 @@ class UfoSplitter(object):
                         upper.appendContour(con)
                     else:
                         lower.appendContour(con)
-                    font.insertGlyph(upper)
-                    font.insertGlyph(lower)
-                    new_pgo.append(upper.name)
-                    new_pgo.append(lower.name)
-                    font.removeGlyph(g.name)
+                font.insertGlyph(upper)
+                font.insertGlyph(lower)
+                new_pgo.append(upper.name)
+                new_pgo.append(lower.name)
+                font.removeGlyph(g.name)
             else:
                 new_pgo.append(g.name)
         font.lib["public.glyphOrder"] = sorted(new_pgo)

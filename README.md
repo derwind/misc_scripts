@@ -41,6 +41,12 @@ check glyph's width according to specified layout file.
 ### rename\_ufo\_by\_Glyphs.py
 rename a UFO's glyphs names where the UFO is exported by Glyphs.
 
+### change_upm.py
+change UPM in OpenType fonts in order to convert them to TrueType fonts whose UPM is power of two. I assume that converting to TTF is done by `otf2ttf` after changing UPM.
+
+### split\_and\_join\_glyphs.py
+split and join glyphs whose contours' number exceeds threshold in order to run checkOutlines
+
 <hr>
 
 ## freetype
