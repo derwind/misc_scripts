@@ -44,6 +44,9 @@ rename a UFO's glyphs names where the UFO is exported by Glyphs.
 ### change_upm.py
 change UPM in OpenType fonts in order to convert them to TrueType fonts whose UPM is power of two. I assume that converting to TTF is done by `otf2ttf` after changing UPM.
 
+### change_upmUFO.py
+change UPM in UFO fonts in order to build TrueType fonts whose UPM is power of two. I assume that converting to TTF is done by `otf2ttf` after building temporary OTF.
+
 ### split\_and\_join\_glyphs.py
 split and join glyphs whose contours' number exceeds threshold in order to run checkOutlines
 
