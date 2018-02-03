@@ -42,101 +42,54 @@ class GlyphsScaler(object):
         for g in self.font:
             for con in g.contours:
                 for pt in con.points:
-                    pt.x = self.scale(pt.x)
-                    pt.y = self.scale(pt.y)
-            g.width = self.scale(g.width)
+                    pt.x = self._scale_value(pt.x)
+                    pt.y = self._scale_value(pt.y)
+            g.width = self._scale_value(g.width)
 
     def update_GPOS(self):
         pass
 
     def update_generic_dimension(self):
-        info = self.font.info
-        info.unitsPerEm = self.scale(info.unitsPerEm)
-        info.descender = self.scale(info.descender)
-        info.xHeight = self.scale(info.xHeight)
-        info.capHeight = self.scale(info.capHeight)
-        info.ascender = self.scale(info.ascender)
+        attrs = ["unitsPerEm", "descender", "xHeight", "capHeight", "ascender"]
+        self.scale_object(self.font.info, attrs)
 
     def update_hhea(self):
-        info = self.font.info
-        if hasnoneattr(info, "openTypeHheaAscender"):
-            info.openTypeHheaAscender = self.scale(info.openTypeHheaAscender)
-        if hasnoneattr(info, "openTypeHheaDescender"):
-            info.openTypeHheaDescender = self.scale(info.openTypeHheaDescender)
-        if hasnoneattr(info, "openTypeHheaLineGap"):
-            info.openTypeHheaLineGap = self.scale(info.openTypeHheaLineGap)
+        attrs = ["openTypeHheaAscender", "openTypeHheaDescender", "openTypeHheaLineGap"]
+        self.scale_object(self.font.info, attrs)
 
     def update_OS_2(self):
-        info = self.font.info
-        if hasnoneattr(info, "openTypeOS2TypoAscender"):
-            info.openTypeOS2TypoAscender = self.scale(info.openTypeOS2TypoAscender)
-        if hasnoneattr(info, "openTypeOS2TypoDescender"):
-            info.openTypeOS2TypoDescender = self.scale(info.openTypeOS2TypoDescender)
-        if hasnoneattr(info, "openTypeOS2TypoLineGap"):
-            info.openTypeOS2TypoLineGap = self.scale(info.openTypeOS2TypoLineGap)
-        if hasnoneattr(info, "openTypeOS2WinAscent"):
-            info.openTypeOS2WinAscent = self.scale(info.openTypeOS2WinAscent)
-        if hasnoneattr(info, "openTypeOS2WinDescent"):
-            info.openTypeOS2WinDescent = self.scale(info.openTypeOS2WinDescent)
-        if hasnoneattr(info, "openTypeOS2SubscriptXSize"):
-            info.openTypeOS2SubscriptXSize = self.scale(info.openTypeOS2SubscriptXSize)
-        if hasnoneattr(info, "openTypeOS2SubscriptYSize"):
-            info.openTypeOS2SubscriptYSize = self.scale(info.openTypeOS2SubscriptYSize)
-        if hasnoneattr(info, "openTypeOS2SubscriptXOffset"):
-            info.openTypeOS2SubscriptXOffset = self.scale(info.openTypeOS2SubscriptXOffset)
-        if hasnoneattr(info, "openTypeOS2SubscriptYOffset"):
-            info.openTypeOS2SubscriptYOffset = self.scale(info.openTypeOS2SubscriptYOffset)
-        if hasnoneattr(info, "openTypeOS2SuperscriptXSize"):
-            info.openTypeOS2SuperscriptXSize = self.scale(info.openTypeOS2SuperscriptXSize)
-        if hasnoneattr(info, "openTypeOS2SuperscriptYSize"):
-            info.openTypeOS2SuperscriptYSize = self.scale(info.openTypeOS2SuperscriptYSize)
-        if hasnoneattr(info, "openTypeOS2SuperscriptXOffset"):
-            info.openTypeOS2SuperscriptXOffset = self.scale(info.openTypeOS2SuperscriptXOffset)
-        if hasnoneattr(info, "openTypeOS2SuperscriptYOffset"):
-            info.openTypeOS2SuperscriptYOffset = self.scale(info.openTypeOS2SuperscriptYOffset)
-        if hasnoneattr(info, "openTypeOS2StrikeoutSize"):
-            info.openTypeOS2StrikeoutSize = self.scale(info.openTypeOS2StrikeoutSize)
-        if hasnoneattr(info, "openTypeOS2StrikeoutPosition"):
-            info.openTypeOS2StrikeoutPosition = self.scale(info.openTypeOS2StrikeoutPosition)
+        attrs = ["openTypeOS2TypoAscender", "openTypeOS2TypoDescender", "openTypeOS2TypoLineGap", "openTypeOS2WinAscent", "openTypeOS2WinDescent", "openTypeOS2SubscriptXSize", "openTypeOS2SubscriptYSize", "openTypeOS2SubscriptXOffset", "openTypeOS2SubscriptYOffset", "openTypeOS2SuperscriptXSize", "openTypeOS2SuperscriptYSize", "openTypeOS2SuperscriptXOffset", "openTypeOS2SuperscriptYOffset", "openTypeOS2StrikeoutSize", "openTypeOS2StrikeoutPosition"]
+        self.scale_object(self.font.info, attrs)
 
     def update_vhea(self):
-        info = self.font.info
-        if hasnoneattr(info, "openTypeVheaVertTypoAscender"):
-            info.openTypeVheaVertTypoAscender = self.scale(info.openTypeVheaVertTypoAscender)
-        if hasnoneattr(info, "openTypeVheaVertTypoDescender"):
-            info.openTypeVheaVertTypoDescender = self.scale(info.openTypeVheaVertTypoDescender)
-        if hasnoneattr(info, "openTypeVheaVertTypoLineGap"):
-            info.openTypeVheaVertTypoLineGap = self.scale(info.openTypeVheaVertTypoLineGap)
+        attrs = ["openTypeVheaVertTypoAscender", "openTypeVheaVertTypoDescender", "openTypeVheaVertTypoLineGap"]
+        self.scale_object(self.font.info, attrs)
 
     def update_postscript_specific(self):
-        scale_list = lambda val: self.scale(val)
+        scale_list = lambda val: self._scale_value(val)
 
-        info = self.font.info
-        if hasnoneattr(info, "postscriptUnderlineThickness"):
-            info.postscriptUnderlineThickness = self.scale(info.postscriptUnderlineThickness)
-        if hasnoneattr(info, "postscriptUnderlinePosition"):
-            info.postscriptUnderlinePosition = self.scale(info.postscriptUnderlinePosition)
-        if hasnoneattr(info, "postscriptBlueValues"):
-            info.postscriptBlueValues = map(scale_list, info.postscriptBlueValues)
-        if hasnoneattr(info, "postscriptOtherBlues"):
-            info.postscriptOtherBlues = map(scale_list, info.postscriptOtherBlues)
-        if hasnoneattr(info, "postscriptFamilyBlues"):
-            info.postscriptFamilyBlues = map(scale_list, info.postscriptFamilyBlues)
-        if hasnoneattr(info, "postscriptFamilyOtherBlues"):
-            info.postscriptFamilyOtherBlues = map(scale_list, info.postscriptFamilyOtherBlues)
-        if hasnoneattr(info, "postscriptStemSnapH"):
-            info.postscriptStemSnapH = map(scale_list, info.postscriptStemSnapH)
-        if hasnoneattr(info, "postscriptStemSnapV"):
-            info.postscriptStemSnapV = map(scale_list, info.postscriptStemSnapV)
-        if hasnoneattr(info, "postscriptDefaultWidthX"):
-            info.postscriptDefaultWidthX = self.scale(info.postscriptDefaultWidthX)
-        if hasnoneattr(info, "postscriptNominalWidthX"):
-            info.postscriptNominalWidthX = self.scale(info.postscriptNominalWidthX)
+        attrs = ["postscriptUnderlineThickness", "postscriptUnderlinePosition", "openTypeVheaVertTypoLineGap", "postscriptDefaultWidthX", "postscriptNominalWidthX"]
+        self.scale_object(self.font.info, attrs)
+
+        attrs = ["postscriptBlueValues", "postscriptOtherBlues", "postscriptFamilyBlues", "postscriptFamilyOtherBlues", "postscriptStemSnapH", "postscriptStemSnapV"]
+        self.scale_list_object(self.font.info, attrs)
 
     def update_vmtx(self):
         pass
 
-    def scale(self, value):
+    def scale_object(self, obj, attrs):
+        for attr in attrs:
+            if hasnoneattr(obj, attr):
+                setattr(obj, attr, self._scale_value(getattr(obj, attr)))
+
+    def scale_list_object(self, obj, attrs):
+        scale_list = lambda val: self._scale_value(val)
+
+        for attr in attrs:
+            if hasnoneattr(obj, attr):
+                setattr(obj, attr, map(scale_list, getattr(obj, attr)))
+
+    def _scale_value(self, value):
         return int(value * self._scale)
 
 def get_args():
