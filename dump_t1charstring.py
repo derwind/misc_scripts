@@ -3,7 +3,6 @@
 
 import os, sys
 from fontTools.t1Lib import T1Font
-from fontTools.pens.recordingPen import RecordingPen
 
 def main():
     t1_font = T1Font(sys.argv[1])
