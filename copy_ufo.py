@@ -17,15 +17,12 @@ def copy_ufo(in_ufo, out_ufo, formatVersion):
     for attr in font.info._properties.keys():
         setattr(out_font.info, attr, getattr(font.info, attr))
 
-    new_pgo = []
-
     for gname in font.lib['public.glyphOrder']:
         g = font[gname]
         g_copied = Glyph()
         for attr in ['width', 'height', 'unicodes', 'note', 'lib']:
             if hasattr(g, attr):
                 setattr(g_copied, attr, getattr(g, attr))
-        g_copied.width = g.width
         pen = GlyphObjectPointPen(g_copied)
         g.drawPoints(pen)
         out_font.insertGlyph(g_copied, gname)
